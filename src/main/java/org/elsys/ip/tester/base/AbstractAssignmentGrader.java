@@ -1,7 +1,7 @@
 package org.elsys.ip.tester.base;
 
-import javafx.util.Pair;
 import org.apache.commons.lang3.StringUtils;
+import org.elsys.ip.tester.util.StreamUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 public abstract class AbstractAssignmentGrader implements AssignmentGrader {
     private static final long timeout = 1 * 60L; //1min
@@ -17,6 +18,7 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
     private static final String processErrorFile = "error.txt";
 
     private float grade = 0f;
+    private List<String> failedTests = new ArrayList<>();
 
     @Override
     public float grade(Path path) {
@@ -25,8 +27,22 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
         } catch (Throwable t) {
             System.out.println(t.getMessage());
             t.printStackTrace();
+        } finally {
+            if (!failedTests.isEmpty()) {
+                System.out.println("<<<<<<<<<<< Failed tests:");
+                failedTests.forEach(ft -> System.out.println(ft));
+            }
+
+            // Clear all started processes
+            AsyncResult.allProcesses.stream().filter(p -> p.isAlive()).forEach(p -> {
+                try {
+                    p.destroy();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+            });
         }
-        return grade;
+        return ((int)(grade * 100)) / 100.0f;
     }
 
     protected abstract void gradeInternal(Path path) throws Exception;
@@ -39,11 +55,17 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
         }
     }
 
-    protected Optional<File> findFile(Path path, String extension) {
-        return Arrays.stream(path.toFile().listFiles()).filter(p -> p.getName().endsWith(extension)).findFirst();
+    protected Optional<File> findSingleFile(Path path, String regex) {
+        try {
+            Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+            return Files.walk(path).map(p -> p.toFile()).filter(f -> pattern.matcher(f.getName()).matches()).collect(StreamUtils.toSingleton());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return Optional.empty();
+        }
     }
 
-    private Result process(Path path, String command, String[] args) {
+    private Result process(Path path, int expectedErrorCode, String command, String[] args) {
         File output = new File(processOutputFile);
         File error = new File(processErrorFile);
         if (output.exists()) output.delete();
@@ -60,23 +82,26 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
             Process process = new ProcessBuilder(commandAndArgs).directory(path.toFile()).redirectOutput(output).redirectError(error).start();
 
             if (!process.waitFor(timeout, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
                 throw new RuntimeException(command + " didn't finish in " + timeout + " seconds.");
             }
 
             System.out.println("Process finished with exit code: " + process.exitValue());
 
-            if (process.exitValue() != 0) {
-                throw new RuntimeException("$command didn't finish with exit code 0. Exit code: " + process.exitValue());
+            if (process.exitValue() != expectedErrorCode) {
+                throw new RuntimeException(command + " didn't finish with exit code " + expectedErrorCode + ". Exit code: " + process.exitValue());
             }
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
             try {
-                result = new String(Files.readAllBytes(output.toPath()));
-                System.out.println("-----Result: " + result);
-                System.out.println("-----END OF RESULT");
+                result = new String(Files.readAllBytes(output.toPath())).trim();
+                if (!result.isEmpty()) {
+                    System.out.println("-----Result: " + result);
+                    System.out.println("-----END OF RESULT");
+                }
 
-                errorResult = new String(Files.readAllBytes(error.toPath()));
+                errorResult = new String(Files.readAllBytes(error.toPath())).trim();
                 if (!errorResult.isEmpty()) {
                     System.out.println("-----Error: " + errorResult);
                     System.out.println("-----END OF ERROR");
@@ -92,30 +117,54 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
         return new Result(result, errorResult);
     }
 
-    protected Result mvn(Path path, String... args) {
-        return process(path, "mvn", args);
-    }
-
-    protected Result java(Path path, String... args) {
-        return process(path, "java", args);
-    }
-
-    protected <T> Optional<T> test(float points, Supplier<T> block) {
-        System.out.println("==================== BEGIN TEST =======================");
+    private AsyncResult processAsync(Path path, String command, String[] args) {
         try {
-            T result = block.get();
-            grade += points;
-            return Optional.ofNullable(result);
-        } catch (Throwable t) {
-            System.out.println(t.getMessage());
-            return Optional.empty();
-        } finally {
-            System.out.println("===================== END TEST ========================");
+            System.out.println("Executing: " + command + " " + StringUtils.join(args, " "));
+            List<String> commandAndArgs = new ArrayList<>();
+            commandAndArgs.add(command);
+            Arrays.stream(args).forEach(e -> commandAndArgs.add(e));
+            return new AsyncResult(
+                    new ProcessBuilder(commandAndArgs).directory(path.toFile()).start());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    protected void test(float points, Runnable block) {
-        test(points, () -> {
+    protected Result mvn(Path path, String... args) {
+        return process(path, 0, "mvn", args);
+    }
+
+    protected Result java(Path path, String... args) {
+        return process(path, 0, "java", args);
+    }
+
+    protected Result java(Path path, int errorCode, String... args) {
+        return process(path, errorCode, "java", args);
+    }
+
+    protected AsyncResult javaAsync(Path path, String... args) {
+        return processAsync(path, "java", args);
+    }
+
+    protected <T> Optional<T> test(String name, float points, Supplier<T> block) {
+        System.out.println("==================== BEGIN " + name + " =======================");
+        try {
+            T result = block.get();
+            grade += points;
+            System.out.println("======= Grade += " + points);
+            return Optional.ofNullable(result);
+        } catch (Throwable t) {
+            failedTests.add(name);
+            System.out.println(t.getMessage());
+            return Optional.empty();
+        } finally {
+            System.out.println("===================== END " + name + " ========================");
+            System.out.println();
+        }
+    }
+
+    protected void test(String name, float points, Runnable block) {
+        test(name, points, () -> {
             block.run();
             return null;
         });
@@ -127,5 +176,13 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
         }
 
         return optional.get();
+    }
+
+    protected void delay(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

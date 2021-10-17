@@ -1,6 +1,7 @@
 package org.elsys.ip.tester;
 
 import org.elsys.ip.tester.assignments.GraderMaven;
+import org.elsys.ip.tester.assignments.GraderSockets001;
 
 import java.io.File;
 
@@ -22,6 +23,9 @@ public class Tester {
 
         if (homework.equals("maven")) {
             grade = new GraderMaven().grade(file.toPath());
+        }
+        else if (homework.equals("sockets001")) {
+            grade = new GraderSockets001().grade(file.toPath());
         }
         else {
             System.out.println(homework + " doesn't exists.");
