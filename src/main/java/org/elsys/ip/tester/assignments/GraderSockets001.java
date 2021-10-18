@@ -54,40 +54,56 @@ public class GraderSockets001 extends AbstractAssignmentGrader {
         });
 
         // Test client input validation
-        test("client badHost:5555", 0.05f, () -> {
+        test("client badHost:5555", 0.06f, () -> {
             Result result = java(path, 3, "-jar", clientJar.getAbsolutePath(), "badHost:5555");
             assertThat(result.getOutput()).isEmpty();
             assertThat(result.getError()).isEqualTo("invalid host");
         });
 
-        test("client localhost:-5", 0.05f, () -> {
+        test("client localhost:-5", 0.06f, () -> {
             Result result = java(path, 1, "-jar", clientJar.getAbsolutePath(), "localhost:-5");
             assertThat(result.getOutput()).isEmpty();
             assertThat(result.getError()).isEqualTo("invalid arguments");
         });
 
-        test("client localhost:70000", 0.05f, () -> {
+        test("client localhost:70000", 0.06f, () -> {
             Result result = java(path, 1, "-jar", clientJar.getAbsolutePath(), "localhost:70000");
             assertThat(result.getOutput()).isEmpty();
             assertThat(result.getError()).isEqualTo("invalid arguments");
         });
 
-        test("client localhost:5555 another", 0.05f, () -> {
+        test("client localhost:5555 another", 0.06f, () -> {
             Result result = java(path, 1, "-jar", clientJar.getAbsolutePath(), "localhost:5555", "another");
             assertThat(result.getOutput()).isEmpty();
             assertThat(result.getError()).isEqualTo("invalid arguments");
         });
 
-        test("client localhost:5555 [No server]", 0.05f, () -> {
+        test("client localhost:5555 [No server]", 0.06f, () -> {
             Result result = java(path, 4, "-jar", clientJar.getAbsolutePath(), "localhost:5555");
             assertThat(result.getOutput()).isEmpty();
             assertThat(result.getError()).isEqualTo("connection not possible");
         });
 
+        test("server / client localhost:5555 [server disconnect]", 0.05f, () -> {
+            AsyncResult server = javaAsync(path, "-jar", serverJar.getAbsolutePath(), "5555");
+            delay(1000);
+
+            AsyncResult client = javaAsync(path, "-jar", clientJar.getAbsolutePath(), "localhost:5555");
+
+            delay(1000);
+            assertThat(client.getProcess().isAlive()).isTrue();
+
+            server.kill();
+            delay(1000);
+            assertThat(client.readLine()).isEqualTo("server disconnect");
+            assertThat(client.getProcess().isAlive()).isFalse();
+            assertThat(client.getProcess().exitValue()).isEqualTo(0);
+        });
+
         AsyncResult server = javaAsync(path, "-jar", serverJar.getAbsolutePath(), "5555");
         delay(1000);
 
-        test("server / client localhost:5555 > quit", 0.1f, () -> {
+        test("server / client localhost:5555 > quit", 0.05f, () -> {
             AsyncResult client = javaAsync(path, "-jar", clientJar.getAbsolutePath(), "localhost:5555");
 
             client.println("test");
@@ -100,7 +116,7 @@ public class GraderSockets001 extends AbstractAssignmentGrader {
             assertThat(server.getProcess().isAlive()).isTrue();
         });
 
-        test("server / client localhost:5555 > Exit", 0.1f, () -> {
+        test("server / client localhost:5555 > Exit", 0.05f, () -> {
             AsyncResult client = javaAsync(path, "-jar", clientJar.getAbsolutePath(), "localhost:5555");
 
             client.println("test");
