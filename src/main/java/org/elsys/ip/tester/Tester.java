@@ -1,11 +1,22 @@
 package org.elsys.ip.tester;
 
+import com.google.common.base.Supplier;
 import org.elsys.ip.tester.assignments.GraderMaven;
 import org.elsys.ip.tester.assignments.GraderSockets001;
+import org.elsys.ip.tester.assignments.GraderSockets002;
+import org.elsys.ip.tester.base.AssignmentGrader;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Tester {
+    private static final Map<String, Supplier<AssignmentGrader>> GRADERS = new HashMap<String, Supplier<AssignmentGrader>>() {{
+        put("maven", GraderMaven::new);
+        put("sockets001", GraderSockets001::new);
+        put("sockets002", GraderSockets002::new);
+    }};
+
     public static void main(String[] args) {
         if (args.length != 2) {
             System.out.println("Provide two arguments.");
@@ -19,18 +30,13 @@ public class Tester {
             System.exit(1);
         }
 
-        float grade = 0f;
-
-        if (homework.equals("maven")) {
-            grade = new GraderMaven().grade(file.toPath());
-        }
-        else if (homework.equals("sockets001")) {
-            grade = new GraderSockets001().grade(file.toPath());
-        }
-        else {
+        AssignmentGrader grader = GRADERS.get(homework).get();
+        if (grader == null) {
             System.out.println(homework + " doesn't exists.");
             System.exit(1);
         }
+        float grade = grader.grade(file.toPath());
+
         System.out.println("-----------------------------------------");
         System.out.println("Your grade is " + grade);
         System.out.println("-----------------------------------------");
