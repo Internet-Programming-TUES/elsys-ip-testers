@@ -13,14 +13,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class GraderSockets001 extends AbstractAssignmentGrader {
 
+    protected File serverJar;
+    protected File clientJar;
+    protected AsyncResult server;
+
     @Override
     protected void gradeInternal(Path path) throws Exception {
         test("mvn clean package", 0.04f, () -> {
             mvn(path, "clean", "package");
         });
 
-        File serverJar = requireNotNull(test("find server.jar", 0.03f, () -> findSingleFile(path, ".*server.*\\.jar").get()));
-        File clientJar = requireNotNull(test("find client.jar", 0.03f, () -> findSingleFile(path, ".*client.*\\.jar").get()));
+        serverJar = requireNotNull(test("find server.jar", 0.03f, () -> findSingleFile(path, ".*server.*\\.jar").get()));
+        clientJar = requireNotNull(test("find client.jar", 0.03f, () -> findSingleFile(path, ".*client.*\\.jar").get()));
 
         // Test server input validation
         test("server -5", 0.05f, () -> {
@@ -100,13 +104,12 @@ public class GraderSockets001 extends AbstractAssignmentGrader {
             assertThat(client.getProcess().exitValue()).isEqualTo(0);
         });
 
-        AsyncResult server = javaAsync(path, "-jar", serverJar.getAbsolutePath(), "5555");
+        server = javaAsync(path, "-jar", serverJar.getAbsolutePath(), "5555");
         delay(1000);
 
         test("server / client localhost:5555 > quit", 0.05f, () -> {
             AsyncResult client = javaAsync(path, "-jar", clientJar.getAbsolutePath(), "localhost:5555");
 
-            client.println("test");
             assertThat(client.canRead()).isFalse();
             client.println("quit");
             assertThat(client.readLine()).isEqualTo("server disconnect");
@@ -119,7 +122,6 @@ public class GraderSockets001 extends AbstractAssignmentGrader {
         test("server / client localhost:5555 > Exit", 0.05f, () -> {
             AsyncResult client = javaAsync(path, "-jar", clientJar.getAbsolutePath(), "localhost:5555");
 
-            client.println("test");
             assertThat(client.canRead()).isFalse();
             client.println("Exit");
             assertThat(client.readLine()).isEqualTo("server disconnect");
