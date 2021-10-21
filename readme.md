@@ -8,4 +8,4 @@ Instructions:
 
 In order to compile this project execute:
 
-`mvn clean compile exec:java -DmainClass=org.elsys.ip.tester.MainKt <HOMEWORK_NAME> <PATH_TO_YOUR_HOMEWORK>`
+```mvn clean compile exec:java -Dexec.mainClass=org.elsys.ip.tester.Tester -Dexec.args="sockets001 /Users/ivaylomihaylov/tues/git/elsys-ip-private/socketsHomework"`
