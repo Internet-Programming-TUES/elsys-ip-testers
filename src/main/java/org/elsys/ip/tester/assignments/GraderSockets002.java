@@ -77,7 +77,7 @@ public class GraderSockets002 extends GraderSockets001 {
         test("server / client localhost:5555 > client different time zone", 0.1f, () -> {
             AsyncResult client = javaAsync(path, "-Duser.timezone=America/Havana", "-jar", clientJar.getAbsolutePath(), "localhost:5555");
 
-            client.println("time");
+            client.println("Time");
             assertThat(client.readLine()).isEqualTo(getTime(-18000));
             delay(1000);
         });
