@@ -7,10 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -19,9 +16,23 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
     private static final long timeout = 1 * 60L; //1min
     private static final String processOutputFile = "output.txt";
     private static final String processErrorFile = "error.txt";
+    private static final String mvn;
+    private static final String java;
+
+    static {
+        String osName = System.getProperty("os.name");
+        boolean isWindows = osName.toLowerCase().startsWith("windows");
+        if (isWindows) {
+            mvn = "mvn.cmd";
+            java = "java.exe";
+        } else {
+            mvn = "mvn";
+            java = "java";
+        }
+    }
 
     private float grade = 0f;
-    private List<String> failedTests = new ArrayList<>();
+    private final List<String> failedTests = new ArrayList<>();
 
     @Override
     public float grade(Path path) {
@@ -138,19 +149,19 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
     }
 
     protected Result mvn(Path path, String... args) {
-        return process(path, 0, "mvn", args);
+        return process(path, 0, mvn, args);
     }
 
     protected Result java(Path path, String... args) {
-        return process(path, 0, "java", args);
+        return process(path, 0, java, args);
     }
 
     protected Result java(Path path, int errorCode, String... args) {
-        return process(path, errorCode, "java", args);
+        return process(path, errorCode, java, args);
     }
 
     protected AsyncResult javaAsync(Path path, String... args) {
-        return processAsync(path, "java", args);
+        return processAsync(path, java, args);
     }
 
     protected <T> Optional<T> test(String name, float points, Supplier<T> block) {
