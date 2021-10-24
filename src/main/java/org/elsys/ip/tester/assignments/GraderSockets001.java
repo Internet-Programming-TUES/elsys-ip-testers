@@ -98,7 +98,7 @@ public class GraderSockets001 extends AbstractAssignmentGrader {
             assertThat(client.getProcess().isAlive()).isTrue();
 
             server.kill();
-            delay(1000);
+            delay(5000);
             assertThat(client.readLine()).isEqualTo("server disconnect");
             assertThat(client.getProcess().isAlive()).isFalse();
             assertThat(client.getProcess().exitValue()).isEqualTo(0);
@@ -113,7 +113,7 @@ public class GraderSockets001 extends AbstractAssignmentGrader {
             assertThat(client.canRead()).isFalse();
             client.println("quit");
             assertThat(client.readLine()).isEqualTo("server disconnect");
-            delay(1000);
+            delay(5000);
             assertThat(client.getProcess().isAlive()).isFalse();
             assertThat(client.getProcess().exitValue()).isEqualTo(0);
             assertThat(server.getProcess().isAlive()).isTrue();
@@ -125,7 +125,7 @@ public class GraderSockets001 extends AbstractAssignmentGrader {
             assertThat(client.canRead()).isFalse();
             client.println("Exit");
             assertThat(client.readLine()).isEqualTo("server disconnect");
-            delay(1000);
+            delay(5000);
             assertThat(client.getProcess().isAlive()).isFalse();
             assertThat(client.getProcess().exitValue()).isEqualTo(0);
             assertThat(server.getProcess().isAlive()).isTrue();
@@ -143,7 +143,7 @@ public class GraderSockets001 extends AbstractAssignmentGrader {
             client1.println("eXit");
             delay(1000);
             assertThat(client1.readLine()).isEqualTo("server disconnect");
-            delay(2000);
+            delay(5000);
             assertThat(client1.getProcess().isAlive()).isFalse();
             assertThat(client1.getProcess().exitValue()).isEqualTo(0);
             assertThat(server.getProcess().isAlive()).isTrue();
@@ -167,7 +167,7 @@ public class GraderSockets001 extends AbstractAssignmentGrader {
                 asyncResult.println("quit");
             }
 
-            delay(5000);
+            delay(10000);
 
             asyncResults.parallelStream().forEach(ar -> assertThat(ar.readLine()).isEqualTo("server disconnect"));
             assertThat(asyncResults.stream().filter(ar -> ar.getProcess().isAlive()).count()).isEqualTo(0);
