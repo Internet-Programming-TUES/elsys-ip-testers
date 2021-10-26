@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 public abstract class AbstractAssignmentGrader implements AssignmentGrader {
-    private static final long timeout = 1 * 60L; //1min
+    private static final long timeout = 5 * 60L; //5min
     private static final String processOutputFile = "output.txt";
     private static final String processErrorFile = "error.txt";
     private static final String mvn;
