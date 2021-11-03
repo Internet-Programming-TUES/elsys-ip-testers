@@ -7,7 +7,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -48,9 +51,9 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
             }
 
             // Clear all started processes
-            AsyncResult.allProcesses.stream().filter(p -> p.isAlive()).forEach(p -> {
+            AsyncResult.allProcesses.forEach(p -> {
                 try {
-                    p.destroy();
+                    p.destroyForcibly();
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
@@ -173,6 +176,7 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
             return Optional.ofNullable(result);
         } catch (Throwable t) {
             failedTests.add(name);
+            t.printStackTrace();
             System.out.println(t.getMessage());
             return Optional.empty();
         } finally {

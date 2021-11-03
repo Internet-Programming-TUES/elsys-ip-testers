@@ -2,6 +2,7 @@ package org.elsys.ip.tester;
 
 import com.google.common.base.Supplier;
 import org.elsys.ip.tester.assignments.GraderMaven;
+import org.elsys.ip.tester.assignments.GraderServlet;
 import org.elsys.ip.tester.assignments.GraderSockets001;
 import org.elsys.ip.tester.assignments.GraderSockets002;
 import org.elsys.ip.tester.base.AssignmentGrader;
@@ -15,6 +16,7 @@ public class Tester {
         put("maven", GraderMaven::new);
         put("sockets001", GraderSockets001::new);
         put("sockets002", GraderSockets002::new);
+        put("servlet", GraderServlet::new);
     }};
 
     public static void main(String[] args) {
