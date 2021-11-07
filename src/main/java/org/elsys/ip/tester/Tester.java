@@ -7,7 +7,7 @@ import org.elsys.ip.tester.assignments.GraderSockets001;
 import org.elsys.ip.tester.assignments.GraderSockets002;
 import org.elsys.ip.tester.base.AssignmentGrader;
 
-import java.io.File;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +37,8 @@ public class Tester {
             System.out.println(homework + " doesn't exists.");
             System.exit(1);
         }
-        float grade = grader.grade(file.toPath());
+
+        float grade = grader.grade(file.toPath(), new PrintWriter(System.out, true));
 
         System.out.println("-----------------------------------------");
         System.out.println("Your grade is " + grade);

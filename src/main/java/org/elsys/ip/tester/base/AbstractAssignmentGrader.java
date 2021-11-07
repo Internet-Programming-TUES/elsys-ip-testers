@@ -5,6 +5,7 @@ import org.elsys.ip.tester.util.StreamUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
     private final List<String> failedTests = new ArrayList<>();
 
     @Override
-    public float grade(Path path) {
+    public float grade(Path path, PrintWriter reportWriter) {
         try {
             gradeInternal(path);
         } catch (Throwable t) {
@@ -46,8 +47,8 @@ public abstract class AbstractAssignmentGrader implements AssignmentGrader {
             t.printStackTrace();
         } finally {
             if (!failedTests.isEmpty()) {
-                System.out.println("<<<<<<<<<<< Failed tests:");
-                failedTests.forEach(ft -> System.out.println(ft));
+                reportWriter.println("<<<<<<<<<<< Failed tests:");
+                failedTests.forEach(ft -> reportWriter.println(ft));
             }
 
             // Clear all started processes
