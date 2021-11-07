@@ -23,9 +23,11 @@ public class GraderServlet extends AbstractAssignmentGrader implements HTTPMixin
 
         File jarFile = requireNotNull(test("find jar file", 0.025f, () -> findSingleFile(target, ".*\\.jar").get()));
         javaAsync(target, "-jar", jarFile.getName());
-        for (int i = 0; i<10; ++i) {
+        for (int i = 0; i < 10; ++i) {
             delay(2000);
-            if (isPortInUse(8080)) break;
+            if (isPortInUse(8080)) {
+                break;
+            }
         }
         assertThat(isPortInUse(8080)).isTrue();
 
