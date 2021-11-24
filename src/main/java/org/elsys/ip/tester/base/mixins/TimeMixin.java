@@ -24,6 +24,10 @@ public interface TimeMixin {
             this.duration = getTimeInSeconds(matcher.group(1));
         }
 
+        Duration(int duration) {
+            this.duration = duration;
+        }
+
         public void assertIs(int expected) {
             assertThat(duration).isCloseTo(expected, ALLOWED_TIME_DELTA);
         }
@@ -57,6 +61,14 @@ public interface TimeMixin {
 
     default Duration createDuration(String duration) {
         return new Duration(duration);
+    }
+
+    default Duration createDuration(int duration) {
+        return new Duration(duration);
+    }
+
+    default Duration createDuration(int hours, int minutes, int seconds) {
+        return new Duration(hours * 60 * 60 + minutes * 60 + seconds);
     }
 
     default List<Lap> createLaps(String laps) {

@@ -1,18 +1,19 @@
 package org.elsys.ip.tester.base.mixins;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import com.google.gson.Gson;
+import okhttp3.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.Map;
 import java.util.Objects;
 
 public interface HTTPMixin {
 
     OkHttpClient client = new OkHttpClient();
     String baseURL = "http://localhost:8080/stopwatch";
+    MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    Gson gson = new Gson();
 
     default boolean isPortInUse(int port) {
         try {
@@ -39,6 +40,21 @@ public interface HTTPMixin {
         return new Request.Builder().url(baseURL + path).method(method, createEmptyRequestBody(method)).build();
     }
 
+    default Request createRequest(String path, String method, Object body) {
+        return createRequest(path, method, body, null);
+    }
+
+    default Request createRequest(String path, String method, Object body, Map<String, String> headers) {
+        Request.Builder builder = new Request.Builder().url(baseURL + path).method(method, RequestBody.create(gson.toJson(body), JSON));
+        if (headers != null) {
+            for (Map.Entry<String, String> header : headers.entrySet()) {
+                builder.addHeader(header.getKey(), header.getValue());
+            }
+        }
+
+        return builder.build();
+    }
+
     default Response makeHTTPRequest(Request request) {
         try {
             return client.newCall(request).execute();
@@ -53,5 +69,9 @@ public interface HTTPMixin {
         } catch (IOException e) {
             throw new RuntimeException("Cannot extract text from response", e);
         }
+    }
+
+    default <T> T getResponseObject(Response response, Class<T> clazz) {
+        return gson.fromJson(getResponseText(response), clazz);
     }
 }
