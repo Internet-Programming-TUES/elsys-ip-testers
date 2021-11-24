@@ -13,8 +13,10 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 public interface HTTPMixin {
-    OkHttpClient client = new OkHttpClient();
+    OkHttpClient client = new OkHttpClient.Builder().callTimeout(1, MINUTES).readTimeout(1, MINUTES).build();
     String baseURL = "http://localhost";
     MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     Gson gson = new Gson();

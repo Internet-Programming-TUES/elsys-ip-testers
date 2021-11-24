@@ -10,7 +10,6 @@ import org.elsys.ip.tester.base.mixins.TimeMixin;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,14 +29,14 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
 
     @Override
     protected void gradeInternal(Path path) {
-        Path target = requireNotNull(test("mvn clean package", 0.025f, () -> {
+        Path target = requireNotNull(test("mvn clean package", 0.02f, () -> {
             mvn(path, "clean", "package");
             return getTarget(path).get();
         }));
 
         assertThat(isPortInUse(PORT)).isFalse();
 
-        File jarFile = requireNotNull(test("find jar file", 0.025f, () -> findSingleFile(target, ".*\\.jar").get()));
+        File jarFile = requireNotNull(test("find jar file", 0.02f, () -> findSingleFile(target, ".*\\.jar").get()));
         AsyncResult serverProcess = javaAsync(target, "-jar", jarFile.getName());
         for (int i = 0; i < 10; ++i) {
             delay(2000);
@@ -47,24 +46,24 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
         }
         assertThat(isPortInUse(PORT)).isTrue();
 
-        test("404 Not Found", 0.075f, () -> {
+        test("404 Not Found", 0.02f, () -> {
             Response response = makeHTTPRequest(createRequest("/timer/missing-id", "GET"));
             assertThat(response.code()).isEqualTo(404);
         });
 
-        test("400 Bad Request", 0.075f, () -> {
+        test("400 Bad Request", 0.02f, () -> {
             Response response = makeHTTPRequest(createRequest("/timer", "POST", new BadRequestBody("name", "01:01:01", 5)));
 
             assertThat(response.code()).isEqualTo(400);
         });
 
-        test("400 Bad Request", 0.075f, () -> {
+        test("400 Bad Request", 0.02f, () -> {
             Response response = makeHTTPRequest(createRequest("/timer", "POST", new TimeRequestBody("name", "HH:01:01")));
 
             assertThat(response.code()).isEqualTo(400);
         });
 
-        test("start", 0.15f, () -> {
+        test("start", 0.1f, () -> {
             Response response = makeHTTPRequest(createRequest("/timer", "POST", new TimeRequestBody("name", "01:01:01")));
             assertThat(response.code()).isEqualTo(201);
             TimeResponseBody responseObject = getResponseObject(response, TimeResponseBody.class);
@@ -74,7 +73,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             createDuration(responseObject.getTime()).assertIs(60 * 60 + 60 + 1);
         });
 
-        test("start hms format", 0.15f, () -> {
+        test("start hms format", 0.1f, () -> {
             Response response = makeHTTPRequest(createRequest("/timer", "POST", new HoursMinutesSecondsRequestBody("complex timer", 1, 5, 80)));
             assertThat(response.code()).isEqualTo(201);
             TimeResponseBody responseObject = getResponseObject(response, TimeResponseBody.class);
@@ -84,7 +83,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             createDuration(responseObject.getTime()).assertIs(65 * 60 + 80);
         });
 
-        test("start hms format request header", 0.15f, () -> {
+        test("start hms format request header", 0.1f, () -> {
             Response response = makeHTTPRequest(
                     createRequest(
                             "/timer",
@@ -100,7 +99,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             createDuration(responseObject.getTotalSeconds()).assertIs(65 * 60 + 80);
         });
 
-        test("start hms format request header 2", 0.15f, () -> {
+        test("start hms format request header 2", 0.1f, () -> {
             Response response = makeHTTPRequest(
                     createRequest(
                             "/timer",
@@ -116,7 +115,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             createDuration(responseObject.getHours(), responseObject.getMinutes(), responseObject.getSeconds()).assertIs(65 * 60 + 70);
         });
 
-        test("start/get", 0.15f, () -> {
+        test("start/get", 0.1f, () -> {
             Response response = makeHTTPRequest(
                     createRequest(
                             "/timer",
@@ -144,7 +143,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             createDuration(responseObjectGet.getTotalSeconds()).assertIs(0);
         });
 
-        test("start/get headers", 0.15f, () -> {
+        test("start/get headers", 0.1f, () -> {
             Response response = makeHTTPRequest(
                     createRequest(
                             "/timer",
@@ -172,7 +171,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             createDuration(responseObjectGet.getTotalSeconds()).assertIs(55);
         });
 
-        test("start/get headers 2", 0.15f, () -> {
+        test("start/get headers 2", 0.1f, () -> {
             Response response = makeHTTPRequest(
                     createRequest(
                             "/timer",
@@ -197,15 +196,15 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             assertThat(responseObjectGet.getId()).isEqualTo(responseObject.getId());
             assertThat(responseObjectGet.getName()).isEqualTo("two minute timer");
             assertThat(responseObjectGet.getDone()).isEqualTo("no");
-            createDuration(responseObjectGet.getHours(), responseObjectGet.getMinutes(), responseObjectGet.getSeconds()).assertIs(55);
+            createDuration(responseObjectGet.getHours(), responseObjectGet.getMinutes(), responseObjectGet.getSeconds()).assertIs(120);
         });
 
-        test("start/get?long", 0.15f, () -> {
+        test("start/get?long", 0.1f, () -> {
             Response response = makeHTTPRequest(
                     createRequest(
                             "/timer",
                             "POST",
-                            new TimeRequestBody("long poll timer", "00:15:00")));
+                            new TimeRequestBody("long poll timer", "00:00:15")));
             TimeResponseBody responseObject = getResponseObject(response, TimeResponseBody.class);
 
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -241,12 +240,12 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             }
         }
 
-        test("start/get?long", 0.15f, () -> {
+        test("start/get active timers", 0.1f, () -> {
             Response response = makeHTTPRequest(
                     createRequest(
                             "/timer",
                             "POST",
-                            new TimeRequestBody("long poll timer", "00:05:00")));
+                            new TimeRequestBody("long poll timer", "00:00:05")));
             assertThat(response.header("ACTIVE-TIMERS")).isEqualTo("1");
             TimeResponseBody responseObject = getResponseObject(response, TimeResponseBody.class);
 
@@ -257,7 +256,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
                     createRequest(
                             "/timer",
                             "POST",
-                            new TimeRequestBody("long poll timer", "00:10:00")));
+                            new TimeRequestBody("long poll timer", "00:00:10")));
             assertThat(response.header("ACTIVE-TIMERS")).isEqualTo("2");
 
             delay(6000);
@@ -285,7 +284,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             response = makeHTTPRequest(createRequest("/timer/" + responseObject.getId(), "GET"));
             responseObject = getResponseObject(response, TimeResponseBody.class);
             assertThat(responseObject.getDone()).isEqualTo("no");
-            assertThat(response.header("ACTIVE-TIMERS")).isEqualTo("3");
+            assertThat(response.header("ACTIVE-TIMERS")).isEqualTo("2");
         });
     }
 
