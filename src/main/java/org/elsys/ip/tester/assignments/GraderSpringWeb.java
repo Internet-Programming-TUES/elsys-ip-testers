@@ -71,7 +71,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             assertThat(responseObject.getId()).isNotEmpty();
             assertThat(responseObject.getName()).isEqualTo("name");
             assertThat(responseObject.getDone()).isNull();
-            responseObject.toDuration().assertIs(60 * 60 + 60 + 1);
+            createDuration(responseObject.getTime()).assertIs(60 * 60 + 60 + 1);
         });
 
         test("start hms format", 0.15f, () -> {
@@ -81,7 +81,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             assertThat(responseObject.getId()).isNotEmpty();
             assertThat(responseObject.getName()).isEqualTo("complex timer");
             assertThat(responseObject.getDone()).isNull();
-            responseObject.toDuration().assertIs(65 * 60 + 80);
+            createDuration(responseObject.getTime()).assertIs(65 * 60 + 80);
         });
 
         test("start hms format request header", 0.15f, () -> {
@@ -97,7 +97,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             assertThat(responseObject.getId()).isNotEmpty();
             assertThat(responseObject.getName()).isEqualTo("request header");
             assertThat(responseObject.getDone()).isNull();
-            responseObject.toDuration().assertIs(65 * 60 + 80);
+            createDuration(responseObject.getTotalSeconds()).assertIs(65 * 60 + 80);
         });
 
         test("start hms format request header 2", 0.15f, () -> {
@@ -113,7 +113,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             assertThat(responseObject.getId()).isNotEmpty();
             assertThat(responseObject.getName()).isEqualTo("request header 2");
             assertThat(responseObject.getDone()).isNull();
-            responseObject.toDuration().assertIs(65 * 60 + 70);
+            createDuration(responseObject.getHours(), responseObject.getMinutes(), responseObject.getSeconds()).assertIs(65 * 60 + 70);
         });
 
         test("start/get", 0.15f, () -> {
@@ -141,7 +141,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             assertThat(responseObjectGet.getId()).isEqualTo(responseObject.getId());
             assertThat(responseObjectGet.getName()).isEqualTo("fast timer");
             assertThat(responseObjectGet.getDone()).isEqualTo("yes");
-            responseObjectGet.toDuration().assertIs(0);
+            createDuration(responseObjectGet.getTotalSeconds()).assertIs(0);
         });
 
         test("start/get headers", 0.15f, () -> {
@@ -155,7 +155,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             TimeResponseBody responseObject = getResponseObject(response, TimeResponseBody.class);
             assertThat(responseObject.getId()).isNotEmpty();
             assertThat(responseObject.getName()).isEqualTo("one minute timer");
-            responseObject.toDuration().assertIs(60);
+            createDuration(responseObject.getTime()).assertIs(60);
 
             delay(5000);
 
@@ -169,7 +169,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             TotalSecondsResponseBody responseObjectGet = getResponseObject(response, TotalSecondsResponseBody.class);
             assertThat(responseObjectGet.getId()).isEqualTo(responseObject.getId());
             assertThat(responseObjectGet.getName()).isEqualTo("one minute timer");
-            responseObjectGet.toDuration().assertIs(55);
+            createDuration(responseObjectGet.getTotalSeconds()).assertIs(55);
         });
 
         test("start/get headers 2", 0.15f, () -> {
@@ -184,7 +184,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             assertThat(responseObject.getId()).isNotEmpty();
             assertThat(responseObject.getDone()).isNull();
             assertThat(responseObject.getName()).isEqualTo("two minute timer");
-            responseObject.toDuration().assertIs(120);
+            createDuration(responseObject.getTime()).assertIs(120);
 
             response = makeHTTPRequest(
                     createRequest(
@@ -197,7 +197,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             assertThat(responseObjectGet.getId()).isEqualTo(responseObject.getId());
             assertThat(responseObjectGet.getName()).isEqualTo("two minute timer");
             assertThat(responseObjectGet.getDone()).isEqualTo("no");
-            responseObjectGet.toDuration().assertIs(55);
+            createDuration(responseObjectGet.getHours(), responseObjectGet.getMinutes(), responseObjectGet.getSeconds()).assertIs(55);
         });
 
         test("start/get?long", 0.15f, () -> {
@@ -211,24 +211,24 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
             Stopwatch stopwatch = Stopwatch.createStarted();
             response = makeHTTPRequest(createRequest("/timer/" + responseObject.getId() + "?long=true", "GET"));
             stopwatch.stop();
-            createDuration((int)stopwatch.elapsed(TimeUnit.SECONDS)).assertIs(10);
+            createDuration((int) stopwatch.elapsed(TimeUnit.SECONDS)).assertIs(10);
             assertThat(response.code()).isEqualTo(200);
             TimeResponseBody responseObjectGet = getResponseObject(response, TimeResponseBody.class);
             assertThat(responseObjectGet.getId()).isEqualTo(responseObject.getId());
             assertThat(responseObjectGet.getName()).isEqualTo("long poll timer");
             assertThat(responseObjectGet.getDone()).isEqualTo("no");
-            responseObjectGet.toDuration().assertIs(5);
+            createDuration(responseObjectGet.getTime()).assertIs(5);
 
             stopwatch = Stopwatch.createStarted();
             response = makeHTTPRequest(createRequest("/timer/" + responseObject.getId() + "?long=true", "GET"));
             stopwatch.stop();
-            createDuration((int)stopwatch.elapsed(TimeUnit.SECONDS)).assertIs(5);
+            createDuration((int) stopwatch.elapsed(TimeUnit.SECONDS)).assertIs(5);
             assertThat(response.code()).isEqualTo(200);
             responseObjectGet = getResponseObject(response, TimeResponseBody.class);
             assertThat(responseObjectGet.getId()).isEqualTo(responseObject.getId());
             assertThat(responseObjectGet.getName()).isEqualTo("long poll timer");
             assertThat(responseObjectGet.getDone()).isEqualTo("yes");
-            responseObjectGet.toDuration().assertIs(0);
+            createDuration(responseObjectGet.getTime()).assertIs(0);
         });
 
         serverProcess.kill();
@@ -378,10 +378,6 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
         public String getDone() {
             return done;
         }
-
-        public Duration toDuration() {
-            return createDuration(getTime());
-        }
     }
 
     class TotalSecondsResponseBody {
@@ -411,10 +407,6 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
 
         public String getDone() {
             return done;
-        }
-
-        public Duration toDuration() {
-            return createDuration(getTotalSeconds());
         }
     }
 
@@ -457,10 +449,6 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
 
         public String getDone() {
             return done;
-        }
-
-        public Duration toDuration() {
-            return createDuration(getHours(), getMinutes(), getSeconds());
         }
     }
 }
