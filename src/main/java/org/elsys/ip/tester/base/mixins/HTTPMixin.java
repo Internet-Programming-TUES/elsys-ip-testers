@@ -2,9 +2,11 @@ package org.elsys.ip.tester.base.mixins;
 
 import com.google.gson.Gson;
 import okhttp3.*;
+import org.assertj.core.internal.bytebuddy.implementation.bytecode.Throw;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 
@@ -48,15 +50,18 @@ public interface HTTPMixin {
 
     default Request createRequest(String path, String method, Object body, Map<String, String> headers) {
         RequestBody requestBody = body == null ? createEmptyRequestBody(method) : RequestBody.create(gson.toJson(body), JSON);
-
-        Request.Builder builder = new Request.Builder().url(baseURL + ":" + getPort() + "/" + getBasePath() + path).method(method, requestBody);
-        if (headers != null) {
-            for (Map.Entry<String, String> header : headers.entrySet()) {
-                builder.addHeader(header.getKey(), header.getValue());
+        try {
+            Request.Builder builder = new Request.Builder().url(URI.create(baseURL + ":" + getPort() + "/" + getBasePath() + path).toURL().toString()).method(method, requestBody);
+            if (headers != null) {
+                for (Map.Entry<String, String> header : headers.entrySet()) {
+                    builder.addHeader(header.getKey(), header.getValue());
+                }
             }
-        }
 
-        return builder.build();
+            return builder.build();
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
     }
 
     default Response makeHTTPRequest(Request request) {
