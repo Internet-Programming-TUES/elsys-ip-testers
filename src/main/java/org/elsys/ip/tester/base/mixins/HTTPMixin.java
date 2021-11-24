@@ -9,11 +9,13 @@ import java.util.Map;
 import java.util.Objects;
 
 public interface HTTPMixin {
-
     OkHttpClient client = new OkHttpClient();
-    String baseURL = "http://localhost:8080/stopwatch";
+    String baseURL = "http://localhost";
     MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     Gson gson = new Gson();
+
+    String getBasePath();
+    int getPort();
 
     default boolean isPortInUse(int port) {
         try {
@@ -37,7 +39,7 @@ public interface HTTPMixin {
     }
 
     default Request createRequest(String path, String method) {
-        return new Request.Builder().url(baseURL + path).method(method, createEmptyRequestBody(method)).build();
+        return createRequest(path, method, null);
     }
 
     default Request createRequest(String path, String method, Object body) {
@@ -45,7 +47,9 @@ public interface HTTPMixin {
     }
 
     default Request createRequest(String path, String method, Object body, Map<String, String> headers) {
-        Request.Builder builder = new Request.Builder().url(baseURL + path).method(method, RequestBody.create(gson.toJson(body), JSON));
+        RequestBody requestBody = body == null ? createEmptyRequestBody(method) : RequestBody.create(gson.toJson(body), JSON);
+
+        Request.Builder builder = new Request.Builder().url(baseURL + ":" + getPort() + "/" + getBasePath() + path).method(method, requestBody);
         if (headers != null) {
             for (Map.Entry<String, String> header : headers.entrySet()) {
                 builder.addHeader(header.getKey(), header.getValue());

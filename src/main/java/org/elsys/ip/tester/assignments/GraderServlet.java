@@ -13,6 +13,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class GraderServlet extends AbstractAssignmentGrader implements HTTPMixin, TimeMixin {
     @Override
+    public String getBasePath() {
+        return "stopwatch";
+    }
+
+    @Override
+    public int getPort() {
+        return 8080;
+    }
+
+    @Override
     protected void gradeInternal(Path path) {
         Path target = requireNotNull(test("mvn clean package", 0.025f, () -> {
             mvn(path, "clean", "package");

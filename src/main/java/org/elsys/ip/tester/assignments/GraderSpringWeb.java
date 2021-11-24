@@ -19,6 +19,16 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
     private static final int PORT = 8080;
 
     @Override
+    public String getBasePath() {
+        return "";
+    }
+
+    @Override
+    public int getPort() {
+        return PORT;
+    }
+
+    @Override
     protected void gradeInternal(Path path) {
         Path target = requireNotNull(test("mvn clean package", 0.025f, () -> {
             mvn(path, "clean", "package");
