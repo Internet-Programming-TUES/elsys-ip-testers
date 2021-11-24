@@ -1,8 +1,11 @@
 package org.elsys.ip.tester.base.mixins;
 
 import com.google.gson.Gson;
-import okhttp3.*;
-import org.assertj.core.internal.bytebuddy.implementation.bytecode.Throw;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -17,6 +20,7 @@ public interface HTTPMixin {
     Gson gson = new Gson();
 
     String getBasePath();
+
     int getPort();
 
     default boolean isPortInUse(int port) {
@@ -51,7 +55,7 @@ public interface HTTPMixin {
     default Request createRequest(String path, String method, Object body, Map<String, String> headers) {
         RequestBody requestBody = body == null ? createEmptyRequestBody(method) : RequestBody.create(gson.toJson(body), JSON);
         try {
-            Request.Builder builder = new Request.Builder().url(URI.create(baseURL + ":" + getPort() + "/" + getBasePath() + path).toURL().toString()).method(method, requestBody);
+            Request.Builder builder = new Request.Builder().url(URI.create(baseURL + ":" + getPort() + "/" + getBasePath() + path).normalize().toURL().toString()).method(method, requestBody);
             if (headers != null) {
                 for (Map.Entry<String, String> header : headers.entrySet()) {
                     builder.addHeader(header.getKey(), header.getValue());
