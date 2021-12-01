@@ -38,7 +38,7 @@ public class GraderSpringWeb extends AbstractAssignmentGrader implements HTTPMix
 
         File jarFile = requireNotNull(test("find jar file", 0.02f, () -> findSingleFile(target, ".*\\.jar").get()));
         AsyncResult serverProcess = javaAsync(target, "-jar", jarFile.getName());
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 30; ++i) {
             delay(2000);
             if (isPortInUse(PORT)) {
                 break;
