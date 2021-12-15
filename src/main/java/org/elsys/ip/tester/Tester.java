@@ -4,7 +4,8 @@ import com.google.common.base.Supplier;
 import org.elsys.ip.tester.assignments.*;
 import org.elsys.ip.tester.base.AssignmentGrader;
 
-import java.io.*;
+import java.io.File;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,6 +16,7 @@ public class Tester {
         put("sockets002", GraderSockets002::new);
         put("servlet", GraderServlet::new);
         put("springWeb", GraderSpringWeb::new);
+        put("springExam", GraderSpringExam::new);
     }};
 
     public static void main(String[] args) {
