@@ -42,6 +42,9 @@ public class Tester {
 
         System.out.println("-----------------------------------------");
         System.out.println("Your grade is " + grade);
+        if (grade == 1.0) {
+            System.out.println("https://www.youtube.com/watch?v=QcqaQ47ywD0");
+        }
         System.out.println("-----------------------------------------");
     }
 }
